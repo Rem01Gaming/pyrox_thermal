@@ -1,0 +1,6 @@
+id=pyrox_thermal
+name=Pyrox Thermal
+version=v1.0
+versionCode=1
+author=@Rem01Gaming
+description=Freeze and kill any userspace thermal service in sight
