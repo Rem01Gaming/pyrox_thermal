@@ -1,9 +1,6 @@
 while [ -z "$(getprop sys.boot_completed)" ]; do
-	sleep 40
+	sleep 1
 done
-
-# Wait until all thermal services up and running
-sleep 50
 
 # $1:value $2:filepaths
 lock_val() {
@@ -18,23 +15,20 @@ lock_val() {
 }
 
 list_thermal_services() {
-	for rc in /system/etc/init/* /vendor/etc/init/* /odm/etc/init/*; do
+	for rc in $(find /system/etc/init -type f && find /vendor/etc/init -type f && find /odm/etc/init -type f); do
 		grep -r "^service" "$rc" | awk '{print $2}'
 	done | grep thermal
 }
 
-list_thermal_proc() {
-	ps -e -o comm= | grep thermal
-}
-
 for svc in $(list_thermal_services); do
 	echo "Stopping $svc"
+	start $svc
 	stop $svc
 done
 
-for proc in $(list_thermal_proc); do
-	echo "Freeze $proc"
-	kill -SIGSTOP "$(pidof "$proc")"
+for pid in $(pgrep thermal); do
+	echo "Freeze $pid"
+	kill -SIGSTOP $pid
 done
 
 for prop in $(resetprop | grep 'thermal.*running' | awk -F '[][]' '{print $2}'); do
@@ -42,7 +36,7 @@ for prop in $(resetprop | grep 'thermal.*running' | awk -F '[][]' '{print $2}');
 done
 
 if [ -f /proc/driver/thermal/tzcpu ]; then
-	t_limit="125" # 125 Celcius
+	t_limit="125" # Celcius unit
 	no_cooler="0 0 no-cooler 0 0 no-cooler 0 0 no-cooler 0 0 no-cooler 0 0 no-cooler 0 0 no-cooler 0 0 no-cooler 0 0 no-cooler 0 0 no-cooler"
 	lock_val "1 ${t_limit}000 0 mtktscpu-sysrst $no_cooler 200" /proc/driver/thermal/tzcpu
 	lock_val "1 ${t_limit}000 0 mtktspmic-sysrst $no_cooler 1000" /proc/driver/thermal/tzpmic
@@ -56,8 +50,8 @@ if [ -f /proc/driver/thermal/tzcpu ]; then
 	echo "Remove MediaTek's thermal driver limit"
 fi
 
-for trip_point in /sys/class/thermal/*/trip_point_0_temp; do
-	lock_val 125000 $trip_point
+for zone in /sys/class/thermal/thermal_zone*; do
+	lock_val "disabled" $zone/mode
 done
 
 if [ -f /sys/devices/virtual/thermal/thermal_message/cpu_limits ]; then
@@ -85,5 +79,9 @@ fi
 
 lock_val 0 /sys/kernel/msm_thermal/enabled
 lock_val "N" /sys/module/msm_thermal/parameters/enabled
+lock_val "0" /sys/module/msm_thermal/core_control/enabled
+lock_val "0" /sys/module/msm_thermal/vdd_restriction/enabled
 lock_val 0 /sys/class/kgsl/kgsl-3d0/throttling
 lock_val "stop 1" /proc/mtk_batoc_throttling/battery_oc_protect_stop
+
+cmd thermalservice override-status 0
