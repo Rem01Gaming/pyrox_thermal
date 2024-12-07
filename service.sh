@@ -77,6 +77,8 @@ if [ -f "/proc/gpufreq/gpufreq_power_limited" ]; then
 	lock_val "ignore_pbm_limited 1" /proc/gpufreq/gpufreq_power_limited
 fi
 
+find /sys/devices/virtual/thermal -type f -exec chmod 000 {} +
+
 lock_val 0 /sys/kernel/msm_thermal/enabled
 lock_val "N" /sys/module/msm_thermal/parameters/enabled
 lock_val "0" /sys/module/msm_thermal/core_control/enabled
