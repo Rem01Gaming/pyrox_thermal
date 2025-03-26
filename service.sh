@@ -91,11 +91,8 @@ chmod 000 /sys/devices/*.mali/throttling3
 chmod 000 /sys/devices/*.mali/throttling4
 chmod 000 /sys/devices/*.mali/tripping
 
-lock_val 0 /sys/kernel/msm_thermal/enabled
+lock_val 0 /sys/kernel/msm_thermal/enabled /sys/class/kgsl/kgsl-3d0/throttling
 lock_val N /sys/module/msm_thermal/parameters/enabled
-lock_val 0 /sys/module/msm_thermal/core_control/enabled
-lock_val 0 /sys/module/msm_thermal/vdd_restriction/enabled
-lock_val 0 /sys/class/kgsl/kgsl-3d0/throttling
 lock_val "stop 1" /proc/mtk_batoc_throttling/battery_oc_protect_stop
 
 cmd thermalservice override-status 0
