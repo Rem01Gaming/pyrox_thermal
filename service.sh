@@ -1,3 +1,6 @@
+MODDIR=${0%/*}
+AGGRESSIVE_MODE=$(cat "$MODDIR/aggressive_mode")
+
 while [ -z "$(getprop sys.boot_completed)" ]; do
 	sleep 1
 done
@@ -26,14 +29,16 @@ for svc in $(list_thermal_services); do
 	stop $svc
 done
 
-for pid in $(pgrep thermal); do
-	echo "Freeze $pid"
-	kill -SIGSTOP $pid
-done
+if [ "$AGGRESSIVE_MODE" -eq 1 ]; then
+	for pid in $(pgrep thermal); do
+		echo "Freeze $pid"
+		kill -SIGSTOP $pid
+	done
 
-for prop in $(resetprop | grep 'thermal.*running' | awk -F '[][]' '{print $2}'); do
-	resetprop $prop freezed
-done
+	for prop in $(resetprop | grep 'thermal.*running' | awk -F '[][]' '{print $2}'); do
+		resetprop $prop freezed
+	done
+fi
 
 if [ -f /proc/driver/thermal/tzcpu ]; then
 	t_limit="125" # Celcius unit
