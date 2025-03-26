@@ -8,7 +8,7 @@ done
 # $1:value $2:filepaths
 lock_val() {
 	for p in $2; do
-		[ -f "$p" ] && continue
+		[ ! -f "$p" ] && continue
 		chown root:root "$p"
 		chmod 644 "$p"
 		echo "$1" >"$p"
@@ -82,7 +82,7 @@ if [ -f "/proc/gpufreq/gpufreq_power_limited" ]; then
 fi
 
 lock_val 0 /sys/class/thermal/thermal_zone0/thm_enable
-find /sys/devices/virtual/thermal -type f -exec chmod 000 {} +
+find /sys/devices/virtual/thermal -exec chmod 000 {} +
 
 chmod 000 /sys/devices/*.mali/tmu
 chmod 000 /sys/devices/*.mali/throttling1
