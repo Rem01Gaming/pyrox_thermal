@@ -24,18 +24,18 @@ list_thermal_services() {
 
 for svc in $(list_thermal_services); do
 	echo "Stopping $svc"
-	start $svc
-	stop $svc
+	start "$svc"
+	stop "$svc"
 done
 
 if [ "$AGGRESSIVE_MODE" -eq 1 ]; then
 	for pid in $(pgrep thermal); do
 		echo "Freeze $pid"
-		kill -SIGSTOP $pid
+		kill -SIGSTOP "$pid"
 	done
 
 	for prop in $(resetprop | grep 'thermal.*running' | awk -F '[][]' '{print $2}'); do
-		resetprop $prop freezed
+		resetprop "$prop" freezed
 	done
 fi
 
@@ -81,7 +81,15 @@ if [ -f "/proc/gpufreq/gpufreq_power_limited" ]; then
 	lock_val "ignore_pbm_limited 1" /proc/gpufreq/gpufreq_power_limited
 fi
 
+lock_val 0 /sys/class/thermal/thermal_zone0/thm_enable
 find /sys/devices/virtual/thermal -type f -exec chmod 000 {} +
+
+chmod 000 /sys/devices/*.mali/tmu
+chmod 000 /sys/devices/*.mali/throttling1
+chmod 000 /sys/devices/*.mali/throttling2
+chmod 000 /sys/devices/*.mali/throttling3
+chmod 000 /sys/devices/*.mali/throttling4
+chmod 000 /sys/devices/*.mali/tripping
 
 lock_val 0 /sys/kernel/msm_thermal/enabled
 lock_val N /sys/module/msm_thermal/parameters/enabled
