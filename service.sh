@@ -8,17 +8,16 @@ done
 # $1:value $2:filepaths
 lock_val() {
 	for p in $2; do
-		if [ -f "$p" ]; then
-			chown root:root "$p"
-			chmod 644 "$p"
-			echo "$1" >"$p"
-			chmod 444 "$p"
-		fi
+		[ -f "$p" ] && continue
+		chown root:root "$p"
+		chmod 644 "$p"
+		echo "$1" >"$p"
+		chmod 444 "$p"
 	done
 }
 
 list_thermal_services() {
-	for rc in $(find /system/etc/init -type f && find /vendor/etc/init -type f && find /odm/etc/init -type f); do
+	for rc in $(find /system/etc/init /vendor/etc/init /odm/etc/init -type f); do
 		grep -r "^service" "$rc" | awk '{print $2}'
 	done | grep thermal
 }
@@ -60,7 +59,7 @@ for zone in /sys/class/thermal/thermal_zone*; do
 done
 
 if [ -f /sys/devices/virtual/thermal/thermal_message/cpu_limits ]; then
-	echo "Remove Mediatek's CPU limits"
+	echo "Remove CPU limits"
 	for i in 0 2 4 6 7; do
 		maxfreq="$(cat /sys/devices/system/cpu/cpu$i/cpufreq/cpuinfo_max_freq)"
 		[ "$maxfreq" -gt "0" ] && lock_val "cpu$i $maxfreq" /sys/devices/virtual/thermal/thermal_message/cpu_limits
@@ -69,7 +68,7 @@ fi
 
 if [ -d /proc/ppm ]; then
 	echo "Disable thermal-related PPM policies"
-	for idx in $(cat /proc/ppm/policy_status | grep -E 'PWR_THRO|THERMAL' | awk -F'[][]' '{print $2}'); do
+	for idx in $(awk -F'[][]' '/PWR_THRO|THERMAL/{print $2}' /proc/ppm/policy_status); do
 		lock_val "$idx 0" /proc/ppm/policy_status
 	done
 fi
@@ -85,9 +84,9 @@ fi
 find /sys/devices/virtual/thermal -type f -exec chmod 000 {} +
 
 lock_val 0 /sys/kernel/msm_thermal/enabled
-lock_val "N" /sys/module/msm_thermal/parameters/enabled
-lock_val "0" /sys/module/msm_thermal/core_control/enabled
-lock_val "0" /sys/module/msm_thermal/vdd_restriction/enabled
+lock_val N /sys/module/msm_thermal/parameters/enabled
+lock_val 0 /sys/module/msm_thermal/core_control/enabled
+lock_val 0 /sys/module/msm_thermal/vdd_restriction/enabled
 lock_val 0 /sys/class/kgsl/kgsl-3d0/throttling
 lock_val "stop 1" /proc/mtk_batoc_throttling/battery_oc_protect_stop
 
